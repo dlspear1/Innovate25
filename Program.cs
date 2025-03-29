@@ -1,95 +1,45 @@
-﻿namespace Innovate25
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
 {
-    class ROT13
-    {
-        // Function to encode a string using ROT13
-        static string EncodeRot13(string text)
-        {
-            char[] result = new char[text.Length];
-            for (int i = 0; i < text.Length; i++)
-            {
-                char c = text[i];
-                if (char.IsLetter(c))
-                {
-                    char baseChar = char.IsLower(c) ? 'a' : 'A';
-                    result[i] = (char)(((c - baseChar + 13) % 26) + baseChar);
-                }
-                else
-                {
-                    result[i] = c;
-                }
-            }
-            return new string(result);
-        }
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
-        // Function to decode a string using ROT13 (since ROT13 is symmetric)
-        static string DecodeRot13(string text)
-        {
-            return EncodeRot13(text);
-        }
+app.UseHttpsRedirection();
 
-        static void EncodeFile()
-        {
-            Console.Write("Enter the file name to encode: ");
-            string fileName = Console.ReadLine();
+var summaries = new[]
+{
+    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+};
 
-            if (!File.Exists(fileName))
-            {
-                Console.WriteLine($"The file {fileName} does not exist.");
-                return;
-            }
+app.MapGet("/weatherforecast", () =>
+{
+    var forecast =  Enumerable.Range(1, 5).Select(index =>
+        new WeatherForecast
+        (
+            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+            Random.Shared.Next(-20, 55),
+            summaries[Random.Shared.Next(summaries.Length)]
+        ))
+        .ToArray();
+    return forecast;
+})
+.WithName("GetWeatherForecast")
+.WithOpenApi();
 
-            string content = File.ReadAllText(fileName);
-            string encodedContent = EncodeRot13(content);
+app.Run();
 
-            Console.Write("Enter the file name to store the encoded content: ");
-            string encodedFileName = Console.ReadLine();
-
-            File.WriteAllText(encodedFileName, encodedContent);
-
-            Console.WriteLine($"The content has been encoded and saved to {encodedFileName}");
-        }
-
-        static void DecodeFile()
-        {
-            Console.Write("Enter the file name to decode: ");
-            string fileName = Console.ReadLine();
-
-            if (!File.Exists(fileName))
-            {
-                Console.WriteLine($"The file {fileName} does not exist.");
-                return;
-            }
-
-            string content = File.ReadAllText(fileName);
-            string decodedContent = DecodeRot13(content);
-
-            Console.Write("Enter the file name to store the decoded content: ");
-            string decodedFileName = Console.ReadLine();
-
-            File.WriteAllText(decodedFileName, decodedContent);
-
-            Console.WriteLine($"The content has been decoded and saved to {decodedFileName}");
-        }
-
-        static void WordCount()
-    {
-        Console.Write("Enter the file name for word count: ");
-        string fileName = Console.ReadLine();
-
-        if (!File.Exists(fileName))
-        {
-            Console.WriteLine($"The file {fileName} does not exist.");
-            return;
-        }
-
-        string content = File.ReadAllText(fileName);
-        string[] words = content.Split(new char[] { ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-        int wordCount = words.Length;
-
-        Console.WriteLine($"Total number of words in {fileName}: {wordCount}");
-    }
-
-    }
+record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+{
+    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
 
